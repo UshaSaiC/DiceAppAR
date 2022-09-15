@@ -22,6 +22,22 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Show statistics such as fps and timing information
         sceneView.showsStatistics = true
         
+        // SCN stands for screen
+        let cube = SCNBox(width: 0.1, height: 0.1, length: 0.1, chamferRadius: 0.01)
+        
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor.systemPink
+        
+        cube.materials = [material]
+        
+        let node = SCNNode()
+        node.position = SCNVector3(x: 0, y: 0.1, z: -0.5) // z value +ve means moving toards us and -ve is moving forward
+        
+        node.geometry = cube
+        
+        sceneView.scene.rootNode.addChildNode(node)
+        sceneView.autoenablesDefaultLighting = true
+        
         // Create a new scene
         let scene = SCNScene(named: "art.scnassets/ship.scn")!
         

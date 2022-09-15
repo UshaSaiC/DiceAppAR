@@ -10,7 +10,7 @@ import SceneKit
 import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
-
+    
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
@@ -25,19 +25,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         // SCN stands for scene
         sceneView.autoenablesDefaultLighting = true
-
-        // Create a new scene
-//        let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
-//        if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true) {// withName value comes from collada file, clicking on the object and getting its name
-//        diceNode.position = SCNVector3(x: 0, y: 0, z: -0.1)
-//            sceneView.scene.rootNode.addChildNode(diceNode)}
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         let configuration = ARWorldTrackingConfiguration()
-
+        
         configuration.planeDetection = .horizontal // planeDetection helps in figuring out a horizontal surface
         
         sceneView.session.run(configuration)
@@ -49,8 +43,34 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // Pause the view's session
         sceneView.session.pause()
     }
-
-    // below function detects and horizontal surface and gives back width and height which is an AR anchor which helps in visualization
+    
+    // below method is used to get touches from user and we use this to convert ARKit into real world location
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first{
+            let touchLocation = touch.location(in: sceneView)
+            // in below line we are converting the 2D point on phone to 3D object that can be displayed or viewed in parallel with real world
+            let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent)
+            
+            if let hitResult = results.first{
+                let diceScene = SCNScene(named: "art.scnassets/diceCollada.scn")!
+                if let diceNode = diceScene.rootNode.childNode(withName: "Dice", recursively: true) {
+                    diceNode.position = SCNVector3(
+                        x: hitResult.worldTransform.columns.3.x,
+                        y: hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius,
+                        z: hitResult.worldTransform.columns.3.z)
+                    sceneView.scene.rootNode.addChildNode(diceNode)}
+            }
+            
+            //            if !results.isEmpty{
+            //                print("touched the plane")
+            //            }else{
+            //                print("touched somewhere else")
+            //            }
+        }
+        
+    }
+    
+    
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor){
         if anchor is ARPlaneAnchor{
             // anchor is like a tile on ground which has width and height and over where object would be displayed

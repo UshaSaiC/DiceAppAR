@@ -11,19 +11,14 @@ import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
+    var diceArray = [SCNNode]()
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints] // showFeaturePoints basically highlights the area when we point camera to it
-        // Set the view's delegate
+        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
         sceneView.delegate = self
-        
-        // Show statistics such as fps and timing information
         sceneView.showsStatistics = true
-        
-        // SCN stands for scene
         sceneView.autoenablesDefaultLighting = true
     }
     
@@ -32,7 +27,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         let configuration = ARWorldTrackingConfiguration()
         
-        configuration.planeDetection = .horizontal // planeDetection helps in figuring out a horizontal surface
+        configuration.planeDetection = .horizontal
         
         sceneView.session.run(configuration)
     }
@@ -40,15 +35,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
-        // Pause the view's session
         sceneView.session.pause()
     }
     
-    // below method is used to get touches from user and we use this to convert ARKit into real world location
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first{
             let touchLocation = touch.location(in: sceneView)
-            // in below line we are converting the 2D point on phone to 3D object that can be displayed or viewed in parallel with real world
             let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent)
             
             if let hitResult = results.first{
@@ -58,29 +50,47 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                         x: hitResult.worldTransform.columns.3.x,
                         y: hitResult.worldTransform.columns.3.y + diceNode.boundingSphere.radius,
                         z: hitResult.worldTransform.columns.3.z)
-                    sceneView.scene.rootNode.addChildNode(diceNode)}
+                    
+                    diceArray.append(diceNode)
+                    
+                    sceneView.scene.rootNode.addChildNode(diceNode)
+                    roll(dice: diceNode)
+                }
             }
             
-            //            if !results.isEmpty{
-            //                print("touched the plane")
-            //            }else{
-            //                print("touched somewhere else")
-            //            }
         }
         
     }
     
+    func rollAll(){
+        if !diceArray.isEmpty{
+            for dice in diceArray{
+                roll(dice: dice)
+            }
+        }
+    }
+    
+    func roll(dice: SCNNode){
+        let randomX = (Float(arc4random_uniform(4)) + 1) * (Float.pi/2)
+        let randomZ = (Float(arc4random_uniform(4)) + 1) * (Float.pi/2)
+        dice.runAction(SCNAction.rotateBy(x: CGFloat(randomX * 5), y: 0, z: CGFloat(randomZ * 5), duration: 0.5))
+    }
+    
+    
+    @IBAction func rollAgain(_ sender: UIBarButtonItem) {
+        rollAll()
+    }
+    
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        rollAll()
+    }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor){
         if anchor is ARPlaneAnchor{
-            // anchor is like a tile on ground which has width and height and over where object would be displayed
             let planeAnchor = anchor as! ARPlaneAnchor
-            let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z)) // we should give value in xz direction as it an anchor
+            let plane = SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z))
             let planeNode = SCNNode()
             planeNode.position = SCNVector3(x: planeAnchor.center.x, y: 0, z: planeAnchor.center.z)
-            // 1 pi == 180 degress
-            // the plane node created would be vertical by default, so we need to rotate it
-            // - sign indicates clockwise
             planeNode.transform = SCNMatrix4MakeRotation(-Float.pi/2, 1, 0, 0)
             
             let gridMaterial = SCNMaterial()

@@ -43,7 +43,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first{
             let touchLocation = touch.location(in: sceneView)
-            let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent)
+            let results = sceneView.hitTest(touchLocation, types: .existingPlaneUsingExtent) // when we want to capture point on a continuous surface not spefcific to plane we use .featurePoint. 
             
             if let hitResult = results.first{
                 addDice(atLocation: hitResult)
